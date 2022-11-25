@@ -49,14 +49,51 @@ def _collate_fn(batch, max_length=120000):
     }
 
 
-if __name__ == "__main__":
-    dataset = WavDataset()
-    dataloader = DataLoader(
-        dataset,
-        batch_size=2,
-        shuffle=True,
-        collate_fn=_collate_fn,
-    )
 
-    data = next(iter(dataloader))
-    print(data)
+def compute_mask_indices(
+    attention_mask: torch.Tensor,
+    mask_prob: float,
+    mask_length: int,
+    attention_window: int,
+    min_masks: int = 0,
+) -> torch.Tensor:
+    batch_size, sequence_length = attention_mask.shape
+    attention_mask = attention_mask.view(batch_size, sequence_length)
+
+    # compute how many tokens we want to mask
+    num_masked_tokens = int(mask_prob * sequence_length)
+    num_masked_tokens = max(num_masked_tokens, min_masks)
+
+    # make sure num masked indices <= sequence_length
+    if num_masked_tokens > sequence_length:
+        num_masked_tokens = sequence_length
+
+    # SpecAugment mask to fill
+    spec_aug_mask = torch.zeros((batch_size, sequence_length), dtype=torch.bool, device=attention_mask.device)
+
+    # uniform distribution to sample from, make sure that offset samples are < sequence_length
+    uniform_dist = torch.ones((batch_size, sequence_length - (mask_length - 1)), device=attention_mask.device)
+
+    # get random indices to mask
+    spec_aug_mask_idxs = torch.multinomial(uniform_dist, num_masked_tokens)
+
+    # expand masked indices to masked spans
+    spec_aug_mask_idxs = spec_aug_mask_idxs.unsqueeze(-1).expand((batch_size, num_masked_tokens, mask_length))
+    spec_aug_mask_idxs = spec_aug_mask_idxs.contiguous().view(batch_size, num_masked_tokens * mask_length)
+
+    offsets = torch.arange(mask_length, device=attention_mask.device).unsqueeze(0).expand((num_masked_tokens, mask_length))
+    offsets = offsets.contiguous().view(-1)
+
+    spec_aug_mask_idxs = spec_aug_mask_idxs + offsets
+
+    # scatter indices to mask
+    spec_aug_mask = spec_aug_mask.scatter(1, spec_aug_mask_idxs, True)
+
+    return spec_aug_mask
+
+
+if __name__=="__main__":
+    input = torch.rand(1, 16000)
+    mask = compute_mask_indices(input, 0.2, 10, 10)
+    input_masked = input.masked_fill(mask, 0)
+    print(input_masked)
