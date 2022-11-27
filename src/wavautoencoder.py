@@ -12,6 +12,8 @@ import torch.nn.functional as F
 from transformers.modeling_utils import PreTrainedModel
 from transformers.configuration_utils import PretrainedConfig
 
+from utils import compute_mask_indices
+
 
 class FeatureEncoder(nn.Module):
     def __init__(self, output_dim=768):
@@ -405,19 +407,26 @@ class WavAutoEncoderModel(WavAutoEncoderPreTrainedModel):
             dropout=config.dropout,
         )
         self.features_Encoder = FeatureEncoder()
+        # self.compute_masked_indices = compute_mask_indices
         self.init_weights()
 
-    def forward(self,inputs: Tensor,mask: Optional[Tensor] = None,) -> ModelOutput:
+    def forward(
+        self,
+        inputs: Tensor,
+        mask: Optional[Tensor] = None,
+    ) -> ModelOutput:
 
-        assert inputs.dim() == 3, "Input shape should be [batch_size, num_frames, num_features]"
+        assert (
+            inputs.dim() == 3
+        ), "Input shape should be [batch_size, num_frames, num_features]"
 
-
-    
         input_features = self.features_Encoder(inputs)
 
-        print(f"the shape of input_features is {input_features.shape}")
+        mask_indices = compute_mask_indices(input_features, 0.2, 10, 10)
 
-        encoder_output, decoder_output = self.wav_auto_encoder(input_features, mask)
+        input_masked = input_features.masked_fill(mask_indices.unsqueeze(-1), 0)
+
+        encoder_output, decoder_output = self.wav_auto_encoder(input_masked, mask)
         return ModelOutput(
             encoder_output=encoder_output,
             decoder_output=decoder_output,

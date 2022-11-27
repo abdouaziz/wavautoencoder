@@ -61,4 +61,4 @@ if __name__ == "__main__":
 
     input_masked = input.masked_fill(mask.unsqueeze(-1), 0)
     # input_masked = input.masked_fill(mask, 0)
-    print(input_masked)
+    print(input_masked.shape)
