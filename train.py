@@ -2,9 +2,10 @@ from datasets import load_dataset
 import librosa
 import torch
 from src import WavAutoEncoderConfig, WavAutoEncoderModel
-from transformers import Wav2Vec2FeatureExtractor
+from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2Config
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.utils.rnn import pad_sequence
+import torch.nn as nn
 
 
 class WavDataset(Dataset):
@@ -30,24 +31,6 @@ class WavDataset(Dataset):
         item = self.dataset[idx]
         audio = item["audio"]["array"]
         return audio
-
-
-def _collate_fn(batch, max_length=120000):
-
-    batch_size = len(batch)
-
-    input_values = [batch[i]["audio"]["array"] for i in range(batch_size)]
-    input_values = [torch.tensor(each_input) for each_input in input_values]
-    input_values = pad_sequence(input_values, batch_first=True)[:, :max_length]
-
-    attention_mask = [torch.ones_like(each_input) for each_input in input_values]
-    attention_mask = pad_sequence(attention_mask, batch_first=True)[:, :max_length]
-
-    return {
-        "input_values": input_values,
-        "attention_mask": attention_mask,
-    }
-
 
 
 def compute_mask_indices(
@@ -97,3 +80,8 @@ if __name__=="__main__":
     mask = compute_mask_indices(input, 0.2, 10, 10)
     input_masked = input.masked_fill(mask, 0)
     print(input_masked)
+
+if __name__ == "__main__":
+    input_values = torch.rand(2, 1, 120000)
+    encoder = Encoder()
+    print(encoder(input_values).shape)

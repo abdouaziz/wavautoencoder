@@ -13,6 +13,31 @@ from transformers.modeling_utils import PreTrainedModel
 from transformers.configuration_utils import PretrainedConfig
 
 
+class FeatureEncoder(nn.Module):
+    def __init__(self, output_dim=768):
+        super(FeatureEncoder, self).__init__()
+        self.encoder = nn.ModuleList(
+            [
+                nn.Conv1d(in_channels=1, out_channels=512, kernel_size=10, stride=5),
+                nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=2),
+                nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=2),
+                nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=2),
+                nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=2),
+                nn.Conv1d(in_channels=512, out_channels=512, kernel_size=2, stride=2),
+                nn.Conv1d(
+                    in_channels=512, out_channels=output_dim, kernel_size=2, stride=2
+                ),
+            ]
+        )
+        self.gelu = nn.GELU()
+
+    def forward(self, x):
+        for conv_layer in self.encoder:
+            x = conv_layer(x)
+            x = self.gelu(x)
+        return torch.permute(x, (0, 2, 1))
+
+
 class ScaledDotProductAttention(nn.Module):
     def __init__(
         self,
@@ -379,14 +404,20 @@ class WavAutoEncoderModel(WavAutoEncoderPreTrainedModel):
             ff_dim=config.ff_dim,
             dropout=config.dropout,
         )
+        self.features_Encoder = FeatureEncoder()
         self.init_weights()
 
-    def forward(
-        self,
-        inputs: Tensor,
-        mask: Optional[Tensor] = None,
-    ) -> ModelOutput:
-        encoder_output, decoder_output = self.wav_auto_encoder(inputs, mask)
+    def forward(self,inputs: Tensor,mask: Optional[Tensor] = None,) -> ModelOutput:
+
+        assert inputs.dim() == 3, "Input shape should be [batch_size, num_frames, num_features]"
+
+
+    
+        input_features = self.features_Encoder(inputs)
+
+        print(f"the shape of input_features is {input_features.shape}")
+
+        encoder_output, decoder_output = self.wav_auto_encoder(input_features, mask)
         return ModelOutput(
             encoder_output=encoder_output,
             decoder_output=decoder_output,
@@ -397,12 +428,7 @@ if __name__ == "__main__":
 
     config = WavAutoEncoderConfig()
     model = WavAutoEncoderModel(config)
+    wav_signal = torch.randn(2, 1, 16000)
 
-    inputs = torch.rand(1, 100, 768)
-    mask = torch.rand(1, 100, 100)
-
-    mask = (mask > 0.5).float()
-    
-    outputs = model(inputs, mask)
+    outputs = model(wav_signal)
     print(outputs)
-
