@@ -416,9 +416,7 @@ class WavAutoEncoderModel(WavAutoEncoderPreTrainedModel):
         mask: Optional[Tensor] = None,
     ) -> ModelOutput:
 
-        assert (
-            inputs.dim() == 3
-        ), "Input shape should be [batch_size, num_frames, num_features]"
+        assert (inputs.dim() == 3), "Input shape should be [batch_size, num_frames, num_features]"
 
         input_features = self.features_Encoder(inputs)
 
