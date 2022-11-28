@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from transformers.modeling_utils import PreTrainedModel
 from transformers.configuration_utils import PretrainedConfig
 
-from utils import compute_mask_indices
+from .utils import compute_mask_indices
 
 
 class FeatureEncoder(nn.Module):

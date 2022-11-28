@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="wav_autoencoder",
-    version="0.0.1",
+    version="0.0.2",
     author="Abdou Aziz DIOP",
     author_email="abdouaziz@gmail.com",
     description="WavAutoencoder: A Self-Supervised Framework for Learning Audio Representations",
@@ -24,7 +24,7 @@ setuptools.setup(
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
 
-    requires=[
+    install_requires=[
         "datasets",
         "librosa",
         "torch",
