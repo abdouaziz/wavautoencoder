@@ -1,0 +1,11 @@
+LICENSE
+README.md
+setup.py
+src/wav_autoencoder/__init__.py
+src/wav_autoencoder/train.py
+src/wav_autoencoder/utils.py
+src/wav_autoencoder/wavautoencoder.py
+src/wolof.egg-info/PKG-INFO
+src/wolof.egg-info/SOURCES.txt
+src/wolof.egg-info/dependency_links.txt
+src/wolof.egg-info/top_level.txt
