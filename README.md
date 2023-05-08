@@ -1,6 +1,6 @@
-## WavAutoEncoder 
+## Masked WavAutoEncoder 
 
-This repository is an implementation of  autoencoder based on Transformer architecture for self supervised speech representation . 
+This repository is an implementation of  masked wavautoencoder based on Transformer architecture for self supervised speech representation . 
 
 ## Install
 
